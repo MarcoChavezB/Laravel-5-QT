@@ -2,74 +2,76 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
-use App\Http\Controllers\UserController;
+use App\Models\files;
+
 
 class FilesController extends Controller
 {
     protected $userController;
+
+    public function insertFile($path, $userId)
+    {
+        $file = new files();
+        $file->file_name = $path;
+        $file->user_id = $userId;
+        $file->save();
+    }
 
     public function __construct(UserController $userController)
     {
         $this->userController = $userController;
     }
 
+
     public function sendFile(Request $request)
     {
-        if (!$this->userController->decodeToken($request->bearerToken())) {
-            $this->userController->sendNotify("Se intento subir un archivo sin token");
-            return response()->json([
-                'error' => 'Token inválido'
-            ], 401);
-        }
-        $path = Storage::disk('digitalocean')->put('marco', $request->file('file'), 'public');
-        $this->userController->sendNotify("Se mostraron los archivos guardados");
+        $name  = $this->userController->getTokenId(Request()->bearerToken())->name;
+
+        $validator = Validator::make($request->all(), [
+            'file' => 'required|mimes:pdf,jpg,png,txt'
+        ]);
+
+        $path = Storage::disk('digitalocean')->put($name, $request->file('file'), 'public');
+
+        $this->insertFile($path, $this->userController->getTokenId(Request()->bearerToken())->id);
+
+        $this->userController->sendNotify("Se guardo el archivo correctamente");
         return response()->json([
             'message' => 'Archivo guardado exitosamente',
-            'path' => $path
+            'path' => $path,
         ]);
     }
 
-    public function getAllFiles(Request $request)
+    public function getAllFiles()
     {
-        $userFiles = "marco";
-
-        if (!$this->userController->decodeToken($request->bearerToken())) {
-
-            $this->userController->sendNotify("Se intento subir un archivo sin token");
-            return response()->json([
-                'error' => 'Token inválido'
-            ], 401);
+        try {
+            $userFiles = $this->userController->getTokenId(Request()->bearerToken())->name;
+            $this->userController->sendNotify("Se mostraron los archivos de " . $userFiles . " ");
+            $files = Storage::disk('digitalocean')->allFiles($userFiles);
+            return response()->json($files);
+        } catch (\Throwable $th) {
+            return response()->json(['msg' => "Error al obtener los archivos: " . $th->getMessage()], 500);
+            $this->userController->sendNotify("Error" . $th->getMessage());
         }
-        $this->userController->sendNotify("Se mostraron los archivos de " . $userFiles . " ");
-        $files = Storage::disk('digitalocean')->allFiles($userFiles);
-        return response()->json($files);
     }
 
-    public function getFile($fileName, Request $request)
+    public function getFile($filePath)
     {
-        if (!$this->userController->decodeToken($request->bearerToken())) {
+        $userName = $this->userController->getTokenId(Request()->bearerToken())->name;
 
-            $this->userController->sendNotify("Se intento subir un archivo sin token");
-            return response()->json([
-                'error' => 'Token inválido'
-            ], 401);
-        }
+        $url = env('DIGITALOCEAN_SPACES_URL') . $userName . '/' . $filePath;
+        $client = new \GuzzleHttp\Client();
+        $response = $client->request('GET', $url, ['allow_redirects' => false]);
 
-        $filePath = 'marco/' . $fileName;
-        if (Storage::disk('digitalocean')->exists($filePath)) {
-            $fileContent = Storage::disk('digitalocean')->get($filePath);
-
-            $this->userController->sendNotify("Se mostro el arcvhivo" . $fileName . "");
-            return response($fileContent, 200)
-                ->header('Content-Type', 'application/octet-stream')
-                ->header('Content-Disposition', 'attachment; filename="' . $fileName . '"');
+        if ($response->getStatusCode() == 200) {
+            return redirect($url);
         } else {
-            $this->userController->sendNotify("No se encontro el archivo");
-            return response()->json([
-                'error' => 'El archivo no existe.'
-            ], 404);
+            return response()->json(['error' => 'Archivo encontrado en la base de datos pero no en Digital Ocean'], 404);
         }
     }
 }

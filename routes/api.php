@@ -3,10 +3,9 @@
 use App\Http\Controllers\filesController;
 use App\Http\Controllers\notificationController;
 use App\Http\Controllers\userController;
-use Illuminate\Contracts\Cache\Store;
+use App\Http\Middleware\jwt;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Storage;
 
 /*
 |--------------------------------------------------------------------------
@@ -23,26 +22,28 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-//* Autenticación con JWT
-Route::get('/userJWT', [userController::class, 'userJWT']);
+// * AUTH JWT
+Route::middleware([jwt::class])->group(function () {
+    Route::get('/userJWT', [userController::class, 'userJWT']);
+    Route::get("/tryToken", [UserController::class, 'getInfo']);
+    Route::post('/sendFile', [filesController::class, 'sendFile']);
+    Route::get('/getAllfiles', [filesController::class, 'getAllfiles']);
+});
 
-//* Authentificacion con Sanctum
-Route::get('/usuarioSanctum', [userController::class, 'usuarioSanctum'])->middleware('auth:sanctum');
+Route::get('/getFile/{filePath}', [filesController::class, 'getFile']);
+
+
+Route::middleware([jwt::class])->group(function (){
+    Route::get('/usuarioSanctum', [userController::class, 'usuarioSanctum']);
+});
+
 
 //* Mandando notificacion por slack
 Route::get('/sendNotification', [notificationController::class, 'sendNotification']);
 Route::get('/testError', [notificationController::class, 'testError']);
-
 Route::post('/register', [userController::class, 'register']);
 Route::post('/loginJWT', [userController::class, 'loginJWT']);
 Route::post('/loginSan', [userController::class, 'loginSanctum']);
 
 
-Route::post('/sendFile', [filesController::class, 'sendFile']);
-
-// * regresar el nombre de todos los archovos que se tienen guardados - ruta 2
-Route::get('/getAllfiles', [filesController::class, 'getAllfiles']);
-
-// * pasar el parametro el nombre y ese archivo mostrarlo en insomnia  - ruta 3
-Route::get('/getFile/{fileName}', [filesController::class, 'getFile']);
 

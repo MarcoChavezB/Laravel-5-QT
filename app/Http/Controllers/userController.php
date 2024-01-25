@@ -129,4 +129,8 @@ class userController extends Controller
             return response()->json(['msg' => 'Invalid token!'], 401);
         }
     }
+
+    function getInfo (){
+        return "si se pudo";
+    }
 }

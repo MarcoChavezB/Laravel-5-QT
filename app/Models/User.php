@@ -45,5 +45,10 @@ class User extends Authenticatable
     {
         return env('SLACK_WEBHOOK_URL');
     }
+
+    public function files()
+    {
+        return $this->hasMany(files::class);
+    }
     
 } 
