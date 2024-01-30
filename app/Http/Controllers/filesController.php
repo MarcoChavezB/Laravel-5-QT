@@ -32,9 +32,14 @@ class FilesController extends Controller
     {
         $name  = $this->userController->getTokenId(Request()->bearerToken())->name;
 
-        $validator = Validator::make($request->all(), [
-            'file' => 'required|mimes:pdf,jpg,png,txt'
+        Validator::make($request->all(), [
+            'file' => 'required|mimes:pdf,jpeg,png|max:2048',
+        ],[
+            'file.mimes' => 'El archivo debe ser de tipo jpeg o png',
+            'file.max' => 'El archivo no debe pesar mas de 2MB',
+            'file.required' => 'El archivo es requerido'
         ]);
+    
 
         $path = Storage::disk('digitalocean')->put($name, $request->file('file'), 'public');
 

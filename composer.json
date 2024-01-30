@@ -12,7 +12,9 @@
         "laravel/sanctum": "^3.3",
         "laravel/slack-notification-channel": "^3.1",
         "laravel/tinker": "^2.8",
-        "league/flysystem-aws-s3-v3": "3.0"
+        "laravel/ui": "^4.4",
+        "league/flysystem-aws-s3-v3": "3.0",
+        "twbs/bootstrap": "*"
     },
     "require-dev": {
         "fakerphp/faker": "^1.9.1",

@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\ContenidoController;
+use App\Http\Controllers\userController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -13,6 +15,12 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::get('/', function () {
-    return view('welcome');
-});
+Route::get('/', [ContenidoController::class, 'index']);
+Route::get('/edit', [ContenidoController::class, 'edit']);
+Route::post('/delete/{userId}', [ContenidoController::class, 'destroy']);
+Route::get('/register', [ContenidoController::class, 'create']);
+Route::get('/about', [ContenidoController::class, 'about']);
+
+
+Route::post('/register', [userController::class, 'register']);
+Route::post('/edit/user/{id}', [userController::class, 'edit']); 

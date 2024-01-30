@@ -20,6 +20,9 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role',
+        'phone',
+        'is_active'
     ];
 
     /**
@@ -32,6 +35,10 @@ class User extends Authenticatable
         'remember_token',
     ];
 
+    protected $attributes = [
+        'role' => 'user', 
+        'is_active' => false
+    ];
     /**
      * The attributes that should be cast.
      *
